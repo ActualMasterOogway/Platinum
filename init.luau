@@ -10,4 +10,4 @@ local bytecode_string: string = luau.compile(fs.readFile("examples/print.luau"),
 local bytecode_buffer: buffer = buffer.fromstring(bytecode_string)
 
 local bytecode_deserializer = deserializer.new(bytecode_buffer)
-print(bytecode_deserializer.version)
+print(bytecode_deserializer.string_table)

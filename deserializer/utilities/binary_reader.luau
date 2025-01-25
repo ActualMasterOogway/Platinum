@@ -22,7 +22,7 @@ function binary_reader:read_var_int(): number
     local shift: number = 0
 
     repeat
-        local byte: number = binary_reader:read_u8()
+        local byte: number = self:read_u8()
         result = bit32.bor(result, bit32.lshift(bit32.band(byte, 127), shift))
         shift += 7
     until bit32.band(byte, 128)
