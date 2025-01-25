@@ -25,7 +25,7 @@ function binary_reader:read_var_int(): number
         local byte: number = self:read_u8()
         result = bit32.bor(result, bit32.lshift(bit32.band(byte, 127), shift))
         shift += 7
-    until bit32.band(byte, 128)
+    until bit32.band(byte, 128) == 0
 
     return result
 end
@@ -35,6 +35,18 @@ function binary_reader:read_string(length: number?): string
     local str: string = buffer.readstring(self.source, self.offset, length :: number)
     self.offset += length
     return str
+end
+
+function binary_reader:read_u32(): number
+    local u32: number = buffer.readu32(self.source, self.offset)
+    self.offset += 4
+    return u32
+end
+
+function binary_reader:read_f64(): number
+    local f64: number = buffer.readf64(self.source, self.offset)
+    self.offset += 8
+    return f64
 end
 
 export type Class = typeof(binary_reader.new(nil :: never))

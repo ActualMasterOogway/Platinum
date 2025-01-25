@@ -20,4 +20,6 @@ function version.new(binary_reader: binary_reader_class.Class)
     return self
 end
 
+export type Class = typeof(version.new(nil :: never))
+
 return version

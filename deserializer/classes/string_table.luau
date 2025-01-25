@@ -16,4 +16,6 @@ function string_table.new(binary_reader: binary_reader_class.Class)
     return self
 end
 
+export type Class = typeof(string_table.new(nil :: never))
+
 return string_table
