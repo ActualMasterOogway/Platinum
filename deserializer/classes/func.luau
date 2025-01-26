@@ -50,6 +50,11 @@ export type FunctionConstantsTable = {
     constants: { ConstantType }
 }
 
+export type FunctionChildProtosTable = {
+    child_protos_size: number,
+    child_protos: { number }
+}
+
 local binary_reader_class = require("../utilities/binary_reader")
 local luau_spec = require("../luau/spec")
 
@@ -64,6 +69,9 @@ local table_constant = require("constants/table_constant")
 local closure_constant = require("constants/closure_constant")
 local vector_constant = require("constants/vector_constant")
 
+local line_info_class = require("line_info")
+local debug_info_class = require("debug_info")
+
 local func = {}
 func.__index = func
 
@@ -74,6 +82,13 @@ function func.new(binary_reader: binary_reader_class.Class, string_table: string
     self.type_info = self:read_type_info(binary_reader)
     self.instructions_table = self:read_instructions(binary_reader)
     self.constants_table = self:read_constants(binary_reader, string_table)
+    self.child_protos_table = self:read_child_protos(binary_reader)
+
+    self.debug_line_defined = binary_reader:read_var_int()
+    self.debug_name = string_table.strings[binary_reader:read_var_int()]
+
+    self.line_info = self:read_line_info(binary_reader)
+    self.debug_info = self:read_debug_info(binary_reader, string_table)
 
     return self
 end
@@ -200,6 +215,33 @@ function func:read_constants(binary_reader: binary_reader_class.Class, string_ta
         constants_size = constants_size,
         constants = constants
     }
+end
+
+function func:read_child_protos(binary_reader: binary_reader_class.Class)
+    local child_protos_size: number = binary_reader:read_var_int()
+    
+    local child_protos: { number } = table.create(child_protos_size)
+    for child_proto_index: number = 1, child_protos_size do
+        child_protos[child_proto_index] = binary_reader:read_var_int()
+    end
+
+    return child_protos
+end
+
+function func:read_line_info(binary_reader: binary_reader_class.Class): line_info_class.Class?
+    local has_line_info = binary_reader:read_u8() == 1
+    if (has_line_info) then
+        return line_info_class.new(binary_reader, self.instructions_table)
+    end
+    return nil
+end
+
+function func:read_debug_info(binary_reader: binary_reader_class.Class, string_table: string_table_class.Class): debug_info_class.Class?
+    local has_debug_info = binary_reader:read_u8() == 1
+    if (has_debug_info) then
+        return debug_info_class.new(binary_reader, string_table)
+    end
+    return nil
 end
 
 export type Class = typeof(func.new(nil :: never))

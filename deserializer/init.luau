@@ -18,6 +18,8 @@ function deserializer.new(bytecode: buffer)
 
     self.functions = self:read_functions()
 
+    self.main_function_index = self.binary_reader:read_var_int() + 1
+
 
     return self
 end
