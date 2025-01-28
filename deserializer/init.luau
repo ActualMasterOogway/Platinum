@@ -19,7 +19,7 @@ function deserializer.new(bytecode: buffer)
     self.version = version_class.new(self.binary_reader)
     self.string_table = string_table_class.new(self.binary_reader)
 
-    if (self.version.bytecode_version >= 6) then
+    if (self.version.types_version == 3) then
         self.userdata_types = self:read_userdata_types()
     end
     
