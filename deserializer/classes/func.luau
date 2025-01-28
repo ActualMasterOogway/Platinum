@@ -79,6 +79,7 @@ function func.new(binary_reader: binary_reader_class.Class, string_table: string
     local self = setmetatable({}, func)
 
     self.function_header = self:read_function_header(binary_reader)
+
     self.type_info = self:read_type_info(binary_reader)
     self.instructions_table = self:read_instructions(binary_reader)
     self.constants_table = self:read_constants(binary_reader, string_table)

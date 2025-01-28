@@ -14,12 +14,17 @@ function deserializer.new(bytecode: buffer)
     self.version = version_class.new(self.binary_reader)
     self.string_table = string_table_class.new(self.binary_reader)
 
-    -- TODO: Read userdata type remapping table (typesversion >= 3)
-
+    if (self.version.bytecode_version >= 6) then
+        self.userdata_types = self:read_userdata_types()
+    end
+    
     self.functions = self:read_functions()
 
     self.main_function_index = self.binary_reader:read_var_int() + 1
 
+    if (self.binary_reader.offset ~= buffer.len(bytecode)) then
+        print(`WARNING: Bytecode was not parsed properly ({self.binary_reader.offset}/{buffer.len(bytecode)})`)
+    end
 
     return self
 end
@@ -33,6 +38,20 @@ function deserializer:read_functions()
     end
 
     return functions
+end
+
+function deserializer:read_userdata_types()
+    local userdata_types = {}
+
+    while (true) do
+        local index: number = self.binary_reader:read_u8()
+        if (index == 0) then break end
+
+        local name_ref: number = self.binary_reader:read_var_int()
+        table.insert(userdata_types, { index = index, name_ref = name_ref })
+    end
+
+    return userdata_types
 end
 
 return deserializer

@@ -12,9 +12,11 @@ function version.new(binary_reader: binary_reader_class.Class)
         error(`Bytecode version mismatch (expected [{luau_spec.LuauBytecodeTag.LBC_VERSION_MIN}..{luau_spec.LuauBytecodeTag.LBC_VERSION_MAX}], got {self.bytecode_version})`)
     end
 
-    self.types_version = binary_reader:read_u8()
-    if (self.types_version < luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MIN or self.types_version > luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MAX) then
-        error(`Bytecode type version mismatch (expected [{luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MIN}..{luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MAX}], got {self.types_version})`)
+    if (self.bytecode_version >= 4) then
+        self.types_version = binary_reader:read_u8()
+        if (self.types_version < luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MIN or self.types_version > luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MAX) then
+            error(`Bytecode type version mismatch (expected [{luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MIN}..{luau_spec.LuauBytecodeTag.LBC_TYPE_VERSION_MAX}], got {self.types_version})`)
+        end
     end
 
     return self
