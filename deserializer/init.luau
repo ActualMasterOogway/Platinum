@@ -1,3 +1,8 @@
+export type UserdataType = {
+    index: number,
+    name_ref: number,
+}
+
 local binary_reader_class = require("utilities/binary_reader")
 local version_class = require("classes/version")
 local string_table_class = require("classes/string_table")
@@ -41,7 +46,7 @@ function deserializer:read_functions()
 end
 
 function deserializer:read_userdata_types()
-    local userdata_types = {}
+    local userdata_types: { UserdataType } = {}
 
     while (true) do
         local index: number = self.binary_reader:read_u8()
