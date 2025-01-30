@@ -5,6 +5,7 @@ local fs = require("@lune/fs")
 local deserializer = require("deserializer")
 
 local function_class = require("deserializer/classes/func")
+local instruction_class = require("deserializer/classes/instruction")
 
 local disassembler_options = serde.decode("toml", fs.readFile("config.toml"))
 
@@ -28,8 +29,11 @@ local function TestXD()
 
         print(`function {function_label}({table.concat(function_args, ", ")})`)
 
-        for instruction_index, instruction in func.instructions_table.instructions do
-            print(`\t[{instruction_index}] {instruction.opcode.name}{if (instruction.opcode.has_aux) then ` AUX: 0x{string.format("%x", instruction.aux)}` else ""}`)
+        for instruction_index: number, instruction: instruction_class.Class in func.instructions_table.instructions do
+            local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
+            local aux_string: string = if (instruction.opcode_information.has_aux) then ` | AUX: 0x{string.format("%x", instruction.aux)}` else ""
+            local instruction_string: string = `{instruction.opcode_information.name} {registers_string}{aux_string}`
+            print(`\t[{instruction_index}] {instruction_string}`)
         end
         print("")
     end

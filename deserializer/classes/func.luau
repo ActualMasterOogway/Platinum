@@ -165,7 +165,7 @@ function func:read_instructions(binary_reader: binary_reader_class.Class): Funct
         end
 
         local instruction: instruction_class.Class = instruction_class.new(binary_reader, binary_reader:read_u32())
-        if (instruction.opcode.has_aux) then aux_skip_condition = true end
+        if (instruction.opcode_information.has_aux) then aux_skip_condition = true end
         instructions[instruction_index] = instruction
     end
 
