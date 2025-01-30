@@ -29,10 +29,18 @@ local function TestXD()
 
         print(`function {function_label}({table.concat(function_args, ", ")})`)
 
+        local registers_align: number = 0
+        for _, instruction: instruction_class.Class in func.instructions_table.instructions do
+            local opcode_name_length: number = #instruction.opcode_information.name
+            if (opcode_name_length > registers_align) then registers_align = opcode_name_length end
+        end
+
         for instruction_index: number, instruction: instruction_class.Class in func.instructions_table.instructions do
+            local opcode_name_length: number = #instruction.opcode_information.name
+
             local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
             local aux_string: string = if (instruction.opcode_information.has_aux) then ` | AUX: 0x{string.format("%x", instruction.aux)}` else ""
-            local instruction_string: string = `{instruction.opcode_information.name} {registers_string}{aux_string}`
+            local instruction_string: string = `{instruction.opcode_information.name} {string.rep(" ", registers_align - opcode_name_length)}{registers_string}{aux_string}`
             print(`\t[{instruction_index}] {instruction_string}`)
         end
         print("")
