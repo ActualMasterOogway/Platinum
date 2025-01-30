@@ -32,7 +32,7 @@ export type FunctionTypeInfo = {
 
 export type FunctionInstructionsTable = {
     instructions_size: number,
-    instructions: { number } -- TODO: Convert into class
+    instructions: { instruction_class.Class } -- TODO: Convert into class
 }
 
 export type ConstantType = 
@@ -71,6 +71,8 @@ local vector_constant = require("constants/vector_constant")
 
 local line_info_class = require("line_info")
 local debug_info_class = require("debug_info")
+
+local instruction_class = require("instruction")
 
 local func = {}
 func.__index = func
@@ -151,9 +153,20 @@ end
 function func:read_instructions(binary_reader: binary_reader_class.Class): FunctionInstructionsTable
     local instructions_size: number = binary_reader:read_var_int()
 
-    local instructions: { number } = table.create(instructions_size)
+    local instructions: { instruction_class.Class } = table.create(instructions_size)
+
+    local aux_skip_condition: boolean = false
+
     for instruction_index: number = 1, instructions_size do
-        instructions[instruction_index] = binary_reader:read_u32()
+        -- Skip aux or else it will appear as it's own instruction, while it's being handled by the class.
+        if (aux_skip_condition) then 
+            aux_skip_condition = false 
+            continue 
+        end
+
+        local instruction: instruction_class.Class = instruction_class.new(binary_reader, binary_reader:read_u32())
+        if (instruction.opcode.has_aux) then aux_skip_condition = true end
+        instructions[instruction_index] = instruction
     end
 
     return {
