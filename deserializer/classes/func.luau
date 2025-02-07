@@ -93,6 +93,12 @@ function func.new(binary_reader: binary_reader_class.Class, string_table: string
     self.line_info = self:read_line_info(binary_reader)
     self.debug_info = self:read_debug_info(binary_reader, string_table)
 
+    if self.line_info then
+        for i, instr in self.instructions_table.instructions do
+            instr.line = self.line_info:get_line(i)
+        end
+    end
+
     return self
 end
 

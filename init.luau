@@ -40,7 +40,8 @@ local function TestXD()
 
             local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
             local aux_string: string = if (instruction.opcode_information.has_aux) then ` | AUX: 0x{string.format("%x", instruction.aux)}` else ""
-            local instruction_string: string = `{instruction.opcode_information.name} {string.rep(" ", registers_align - opcode_name_length)}{registers_string}{aux_string}`
+            local line_string: string = if (instruction.line) then ` | LINE: {instruction.line}` else ""
+            local instruction_string: string = `{instruction.opcode_information.name} {string.rep(" ", registers_align - opcode_name_length)}{registers_string}{line_string}{aux_string}`
             print(`\t[{instruction_index}] {instruction_string}`)
         end
         print("")

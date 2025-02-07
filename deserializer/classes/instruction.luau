@@ -37,6 +37,6 @@ function instruction.new(binary_reader: binary_reader_class.Class, value: number
     return self
 end
 
-export type Class = typeof(instruction.new(nil :: never))
+export type Class = typeof(instruction.new(nil :: never)) & {line: number?}
 
 return instruction
