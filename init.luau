@@ -80,17 +80,68 @@ local function TestXD()
             if (#registers_string > extra_align) then extra_align = #registers_string end
         end
 
+        local stoopid_labels = {}
+
+        local has_jump = false
+
+        for instruction_index: number, instruction: instruction_class.Class in func.instructions_table.instructions do
+            if (instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPBACK or 
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMP or 
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIFNOTLT or 
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_FORNPREP or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_FORNLOOP or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPXEQKN or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIFNOT or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIFNOTLE or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIF or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIFLE or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPXEQKS or
+                instruction.opcode_information == luau_spec.LuauOpcode.LOP_JUMPIFLT) then
+                
+                    local jmp = ((instruction_index + instruction.aux_offset) + instruction.registers.D) + 1
+                    local already_found = false
+                    for _, v in stoopid_labels do
+                        if (v.to_index == jmp) then 
+                            v.from_instr[instruction_index] = true
+                            already_found = true
+                            break
+                        end
+                    end
+                    if (not already_found) then
+                        table.insert(stoopid_labels, { 
+                            from_instr = { [instruction_index] = true },
+                            to_index = jmp,
+                            label = jmp
+                        })
+                    end
+            end
+        end
+
         for instruction_index: number, instruction: instruction_class.Class in func.instructions_table.instructions do
             local opcode_name_length: number = #instruction.opcode_information.name
 
+            for index: number, label in stoopid_labels do
+                if (label.to_index == (instruction_index + instruction.aux_offset)) then
+                    write_color(`{long_tab}label_{label.label}:\n`, "purple")
+                    has_jump = true
+                end
+            end
+
             local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
             
-            write_color(`{long_tab}[{instruction_index + instruction.aux_offset}] #{instruction_index}`, "blue")
+            write_color(`{if (has_jump) then long_tab else ""}{long_tab}[{instruction_index + instruction.aux_offset}] #{instruction_index}`, "blue")
             write_color(`{short_tab}{instruction.opcode_information.name}`, "yellow")
             write_color(`{string.rep(" ", registers_align - opcode_name_length)}{short_tab}{registers_string}`, "reset")
             if (instruction.line) then
                 write_color(`{short_tab}{string.rep(" ", extra_align - #registers_string)}@ line {instruction.line}`, "red")
             end
+
+            for index: number, label in stoopid_labels do
+                if (label.from_instr[instruction_index]) then
+                    write_color(`{long_tab}goto label_{label.label}`, "purple")
+                end
+            end
+
             if (instruction.opcode_information.has_aux) then
                 write_color(`{long_tab}AUX: `, "reset")
                 write_color(`0x{string.format("%X", instruction.aux)}`, "blue")
