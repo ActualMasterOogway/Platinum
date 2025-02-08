@@ -85,7 +85,7 @@ local function TestXD()
 
             local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
             
-            write_color(`{long_tab}{instruction_index}`, "blue")
+            write_color(`{long_tab}[{instruction_index + instruction.aux_offset}] #{instruction_index}`, "blue")
             write_color(`{short_tab}{instruction.opcode_information.name}`, "yellow")
             write_color(`{string.rep(" ", registers_align - opcode_name_length)}{short_tab}{registers_string}`, "reset")
             if (instruction.line) then

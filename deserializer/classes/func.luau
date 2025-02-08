@@ -116,15 +116,17 @@ function func:read_instructions(binary_reader: binary_reader_class.Class): Funct
     local instructions: { instruction_class.Class } = table.create(instructions_size)
 
     local aux_skip_condition: boolean = false
+    local current_aux_offset: number = 0
 
     for instruction_index: number = 1, instructions_size do
         -- Skip aux or else it will appear as it's own instruction, while it's being handled by the class.
         if (aux_skip_condition) then 
             aux_skip_condition = false 
+            current_aux_offset += 1
             continue 
         end
 
-        local instruction: instruction_class.Class = instruction_class.new(binary_reader, binary_reader:read_u32())
+        local instruction: instruction_class.Class = instruction_class.new(binary_reader, binary_reader:read_u32(), current_aux_offset)
 
         if (instruction.opcode_information.has_aux) then aux_skip_condition = true end
         table.insert(instructions, instruction)
