@@ -1,5 +1,4 @@
-while true
-
-do
+while true do
 	print("hi")
+	break
 end
