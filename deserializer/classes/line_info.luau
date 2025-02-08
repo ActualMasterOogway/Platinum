@@ -28,9 +28,9 @@ function line_info.new(binary_reader: binary_reader_class.Class, instructions_ta
     local baseline_count = bit32.rshift(instructions_table.instructions_size - 1, self.log_span) + 1
     for i = 1, baseline_count do
         local baseline = if (self.line_baselines[i - 1]) then 
-            self.line_baselines[i - 1] + binary_reader:read_u32() 
+            self.line_baselines[i - 1] + binary_reader:read_i32() 
         else 
-            binary_reader:read_u32()
+            binary_reader:read_i32()
 
         self.line_baselines[i] = baseline
     end

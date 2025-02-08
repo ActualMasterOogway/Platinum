@@ -1,7 +1,5 @@
---!native
+while true
 
-print("Hello lovreware")
-
-local function hi(value: string)
-    print("Value: ", value)
+do
+	print("hi")
 end

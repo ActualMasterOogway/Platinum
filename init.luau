@@ -5,6 +5,8 @@ local stdio = require("@lune/stdio")
 
 local deserializer = require("deserializer")
 
+local luau_spec = require("deserializer/luau/spec")
+
 local function_class = require("deserializer/classes/func")
 local instruction_class = require("deserializer/classes/instruction")
 
@@ -25,9 +27,16 @@ local function TestXD()
     local long_tab = string.rep(" ", 8)
     local short_tab = string.rep(" ", 4)
 
+    local main_function = bytecode_deserializer.functions[bytecode_deserializer.main_function_index]
+    local is_native_module = bit32.band(main_function.function_header.flags, luau_spec.LuauProtoFlag.LPF_NATIVE_MODULE) == luau_spec.LuauProtoFlag.LPF_NATIVE_MODULE
+    if (is_native_module) then
+        write_color("--!native\n\n", "white")
+    end
+
     for func_index: number, func: function_class.Class in bytecode_deserializer.functions do
-        local is_main_function: boolean = func_index == bytecode_deserializer.main_function_index
-        local generic_function_label: string = if (func.debug_name) then func.debug_name else `func{func_index}`
+
+        local is_main_function: boolean = func == main_function
+        local generic_function_label: string = if (func.debug_name) then func.debug_name else `anonymous{func_index}`
         local function_label = if (is_main_function) then "main" else generic_function_label
 
         local function_args = {}
@@ -37,6 +46,11 @@ local function TestXD()
         
         if (func.function_header.is_vararg) then table.insert(function_args, "...") end
 
+        local is_natively_compiled = bit32.band(func.function_header.flags, luau_spec.LuauProtoFlag.LPF_NATIVE_FUNCTION) == luau_spec.LuauProtoFlag.LPF_NATIVE_FUNCTION
+        if (is_natively_compiled) then
+            write_color(`@native\n`, "red")
+        end
+
         write_color("function ", "purple")
         write_color(function_label, "reset")
         write_color("(", "white")
@@ -45,6 +59,11 @@ local function TestXD()
 
         if (func.debug_line_defined) then
             write_color(`{short_tab}@ line {func.debug_line_defined}`, "red")
+        end
+
+        local is_native_cold = bit32.band(func.function_header.flags, luau_spec.LuauProtoFlag.LPF_NATIVE_COLD) == luau_spec.LuauProtoFlag.LPF_NATIVE_COLD
+        if (is_native_cold) then
+            write_color(`{short_tab}(Not profitable to compile natively)`, "red")
         end
 
         stdio.write("\n")

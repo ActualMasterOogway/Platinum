@@ -43,6 +43,12 @@ function binary_reader:read_u32(): number
     return u32
 end
 
+function binary_reader:read_i32(): number
+    local i32: number = buffer.readi32(self.source, self.offset)
+    self.offset += 4
+    return i32
+end
+
 function binary_reader:read_f64(): number
     local f64: number = buffer.readf64(self.source, self.offset)
     self.offset += 8
