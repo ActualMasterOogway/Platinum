@@ -32,7 +32,7 @@ export type FunctionTypeInfo = {
 
 export type FunctionInstructionsTable = {
     instructions_size: number,
-    instructions: { instruction_class.Class } -- TODO: Convert into class
+    instructions: { instruction_class.Class }
 }
 
 export type ConstantType = 
