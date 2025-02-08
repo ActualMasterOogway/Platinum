@@ -7,29 +7,6 @@ export type FunctionHeader = {
     flags: number
 }
 
--- https://github.com/luau-lang/luau/blob/c13b5b7440a65987ee9dd592ee468d421d83f223/Compiler/src/BytecodeBuilder.cpp#L730
-export type FunctionTypedUpval = {
-    upval_type: number -- byte
-}
-
-export type FunctionTypedLocal = {
-    local_type: number, -- byte
-    reg: number,        -- byte
-    start_pc: number,   -- var_int
-    delta: number,      -- var_int, end_pc - start_pc
-}
-
-export type FunctionTypeInfo = {
-    start_type_info_size: number,   -- var_int
-    typed_upvals_size: number,      -- var_int
-    typed_locals_size: number,      -- var_int
-
-    typed_upvals: { FunctionTypedUpval },
-    typed_locals: { FunctionTypedLocal },
-
-    final_type_info_size: number    -- var_Int
-}
-
 export type FunctionInstructionsTable = {
     instructions_size: number,
     instructions: { instruction_class.Class }
@@ -74,15 +51,18 @@ local debug_info_class = require("debug_info")
 
 local instruction_class = require("instruction")
 
+local version_class = require("version")
+
 local func = {}
 func.__index = func
 
-function func.new(binary_reader: binary_reader_class.Class, string_table: string_table_class.Class)
+function func.new(binary_reader: binary_reader_class.Class, string_table: string_table_class.Class, version: version_class.Class)
     local self = setmetatable({}, func)
 
     self.function_header = self:read_function_header(binary_reader)
+    
+    self.type_info = self:read_type_info(binary_reader, version.types_version)
 
-    self.type_info = self:read_type_info(binary_reader)
     self.instructions_table = self:read_instructions(binary_reader)
     self.constants_table = self:read_constants(binary_reader, string_table)
     self.child_protos_table = self:read_child_protos(binary_reader)
@@ -112,45 +92,19 @@ function func:read_function_header(binary_reader: binary_reader_class.Class): Fu
     }
 end
 
-function func:read_type_info(binary_reader: binary_reader_class.Class): FunctionTypeInfo | {}
-    local start_type_info_size: number = binary_reader:read_var_int()
-    if (start_type_info_size > 0) then
-
-        local typed_upvals_size: number = binary_reader:read_var_int()
-        local typed_locals_size: number = binary_reader:read_var_int()
-
-        local typed_upvals: { FunctionTypedUpval } = table.create(typed_upvals_size)
-        local typed_locals: { FunctionTypedLocal } = table.create(typed_locals_size)
-
-        for typed_upval_index: number = 1, typed_upvals_size do
-            local typed_upval: FunctionTypedUpval = {
-                upval_type = binary_reader:read_u8()
-            }
-            typed_upvals[typed_upval_index] = typed_upval
+function func:read_type_info(binary_reader: binary_reader_class.Class, types_version: number): {}
+    if (types_version == 1) then
+        local typesize = binary_reader:read_var_int()
+        if (typesize ~= 0) then
+            -- Skip
+            binary_reader.offset += typesize
         end
-
-        for typed_local_index: number = 1, typed_locals_size do
-            local typed_local: FunctionTypedLocal = {
-                local_type = binary_reader:read_u8(),
-                reg = binary_reader:read_u8(),
-                start_pc = binary_reader:read_var_int(),
-                delta = binary_reader:read_var_int(),
-            }
-            typed_locals[typed_local_index] = typed_local
+    elseif (types_version == 2 or types_version == 3) then
+        local typesize = binary_reader:read_var_int()
+        if (typesize ~= 0) then
+            -- Skip
+            binary_reader.offset += typesize
         end
-
-        local final_type_info_size = binary_reader:read_var_int()
-
-        return {
-            start_type_info_size = start_type_info_size,
-            typed_upvals_size = typed_upvals_size,
-            typed_locals_size = typed_locals_size,
-
-            typed_upvals = typed_upvals,
-            typed_locals = typed_locals,
-
-            final_type_info_size = final_type_info_size
-        }
     end
 
     return {}
@@ -171,6 +125,7 @@ function func:read_instructions(binary_reader: binary_reader_class.Class): Funct
         end
 
         local instruction: instruction_class.Class = instruction_class.new(binary_reader, binary_reader:read_u32())
+
         if (instruction.opcode_information.has_aux) then aux_skip_condition = true end
         instructions[instruction_index] = instruction
     end

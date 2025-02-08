@@ -1,6 +1,7 @@
 local luau = require("@lune/luau")
 local serde = require("@lune/serde")
 local fs = require("@lune/fs")
+local stdio = require("@lune/stdio")
 
 local deserializer = require("deserializer")
 
@@ -14,7 +15,16 @@ local bytecode_buffer: buffer = buffer.fromstring(bytecode_string)
 
 local bytecode_deserializer = deserializer.new(bytecode_buffer)
 
+local function write_color(str: string, color: "black" | "blue" | "cyan" | "green" | "purple" | "red" | "reset" | "white" | "yellow")
+    stdio.write(stdio.color(color))
+    stdio.write(str)
+    stdio.write(stdio.color("reset"))
+end
+
 local function TestXD()
+    local long_tab = string.rep(" ", 8)
+    local short_tab = string.rep(" ", 4)
+
     for func_index: number, func: function_class.Class in bytecode_deserializer.functions do
         local is_main_function: boolean = func_index == bytecode_deserializer.main_function_index
         local generic_function_label: string = if (func.debug_name) then func.debug_name else `func{func_index}`
@@ -27,7 +37,17 @@ local function TestXD()
         
         if (func.function_header.is_vararg) then table.insert(function_args, "...") end
 
-        print(`function {function_label}({table.concat(function_args, ", ")})`)
+        write_color("function ", "purple")
+        write_color(function_label, "reset")
+        write_color("(", "white")
+        write_color(table.concat(function_args, ", "), "reset")
+        write_color(")", "white")
+
+        if (func.debug_line_defined) then
+            write_color(`{short_tab}@ line {func.debug_line_defined}`, "red")
+        end
+
+        stdio.write("\n")
 
         local registers_align: number = 0
         for _, instruction: instruction_class.Class in func.instructions_table.instructions do
@@ -35,16 +55,32 @@ local function TestXD()
             if (opcode_name_length > registers_align) then registers_align = opcode_name_length end
         end
 
+        local extra_align: number = 0
+        for _, instruction: instruction_class.Class in func.instructions_table.instructions do
+            local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
+            if (#registers_string > extra_align) then extra_align = #registers_string end
+        end
+
         for instruction_index: number, instruction: instruction_class.Class in func.instructions_table.instructions do
             local opcode_name_length: number = #instruction.opcode_information.name
 
             local registers_string: string = `A: {instruction.registers.A}, B: {instruction.registers.B}, C: {instruction.registers.C}, D: {instruction.registers.D}, E: {instruction.registers.E}`
-            local aux_string: string = if (instruction.opcode_information.has_aux) then ` | AUX: 0x{string.format("%x", instruction.aux)}` else ""
-            local line_string: string = if (instruction.line) then ` | LINE: {instruction.line}` else ""
-            local instruction_string: string = `{instruction.opcode_information.name} {string.rep(" ", registers_align - opcode_name_length)}{registers_string}{line_string}{aux_string}`
-            print(`\t[{instruction_index}] {instruction_string}`)
+            
+            write_color(`{long_tab}{instruction_index}`, "blue")
+            write_color(`{short_tab}{instruction.opcode_information.name}`, "yellow")
+            write_color(`{string.rep(" ", registers_align - opcode_name_length)}{short_tab}{registers_string}`, "reset")
+            if (instruction.line) then
+                write_color(`{short_tab}{string.rep(" ", extra_align - #registers_string)}@ line {instruction.line}`, "red")
+            end
+            if (instruction.opcode_information.has_aux) then
+                write_color(`{long_tab}AUX: `, "reset")
+                write_color(`0x{string.format("%X", instruction.aux)}`, "blue")
+            end
+
+            stdio.write("\n")
         end
-        print("")
+
+        stdio.write("\n")
     end
 end
 

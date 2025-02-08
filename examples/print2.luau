@@ -1,3 +1,5 @@
+--!native
+
 print("Hello lovreware")
 
 local function hi(value: string)

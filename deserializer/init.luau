@@ -39,7 +39,7 @@ function deserializer:read_functions()
 
     local functions: { func_class.Class } = table.create(functions_size)
     for function_index: number = 1, functions_size do
-        functions[function_index] = func_class.new(self.binary_reader, self.string_table)
+        functions[function_index] = func_class.new(self.binary_reader, self.string_table, self.version)
     end
 
     return functions
